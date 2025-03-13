@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category.name }} - DuelTech{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="glass-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ category.name }}</h1>
+            <a id="compareSelectedBtn" href="#" class="btn btn-primary disabled">
+                <i class="fas fa-exchange-alt"></i> Compare Selected (0)
+            </a>
+        </div>
+        
+        <div class="row g-4">
+            {% for product in products %}
+            <div class="col-md-4">
+                <div class="glass-card h-100 p-4">
+                    <div class="text-center mb-3">
+                        <img src="{{ url_for('static', filename='images/placeholder.png') }}" 
+                             alt="{{ product.name }}" class="img-fluid mb-3" style="max-width: 200px;">
+                        <h4>{{ product.name }}</h4>
+                    </div>
+                    
+                    <div class="specs-list mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="price">{{ product.price }}</span>
+                            <div class="rating">
+                                {% for i in range(product.rating|int) %}
+                                <i class="fas fa-star text-warning"></i>
+                                {% endfor %}
+                                {% if (product.rating % 1) >= 0.5 %}
+                                <i class="fas fa-star-half-alt text-warning"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% for key, value in product.specs.items() %}
+                        <div class="spec-item">
+                            <small class="text-muted">{{ key|replace('_', ' ')|title }}:</small>
+                            <span>{{ value }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-auto">
+                        <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-info-circle"></i> Details
+                        </a>
+                        <button onclick="addToCompare('{{ product.id }}')" 
+                                class="btn btn-primary">
+                            <i class="fas fa-exchange-alt"></i> Add to Compare
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if products|length == 0 %}
+        <div class="text-center py-5">
+            <h3>No products found in this category.</h3>
+            <p>Check back later for new additions!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.specs-list {
+    font-size: 0.9rem;
+}
+.spec-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.spec-item:last-child {
+    border-bottom: none;
+}
+.price {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #2ecc71;
+}
+.rating {
+    font-size: 1.1rem;
+}
+</style>
+
+<script>
+// Array to store selected products for comparison
+let selectedProducts = [];
+const MAX_COMPARE_PRODUCTS = 4;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize selected products from URL parameters (if any)
+    const urlParams = new URLSearchParams(window.location.search);
+    const productIds = urlParams.getAll('product_id');
+    
+    if (productIds.length > 0) {
+        selectedProducts = productIds;
+        updateCompareButton();
+    }
+});
+
+function addToCompare(productId) {
+    const button = document.querySelector(`button[onclick="addToCompare('${productId}')"]`);
+    
+    // Check if product is already selected
+    const index = selectedProducts.indexOf(productId);
+    
+    if (index === -1) {
+        // Add product if not already in the list and not exceeding max
+        if (selectedProducts.length < MAX_COMPARE_PRODUCTS) {
+            selectedProducts.push(productId);
+            button.classList.add('btn-success');
+            button.classList.remove('btn-primary');
+            button.innerHTML = '<i class="fas fa-check"></i> Added';
+        } else {
+            // Alert user if max products reached
+            alert(`You can compare up to ${MAX_COMPARE_PRODUCTS} products at a time.`);
+        }
+    } else {
+        // Remove product if already in the list
+        selectedProducts.splice(index, 1);
+        button.classList.add('btn-primary');
+        button.classList.remove('btn-success');
+        button.innerHTML = '<i class="fas fa-exchange-alt"></i> Add to Compare';
+    }
+    
+    updateCompareButton();
+}
+
+function updateCompareButton() {
+    const compareBtn = document.getElementById('compareSelectedBtn');
+    
+    if (selectedProducts.length > 0) {
+        compareBtn.classList.remove('disabled');
+        compareBtn.innerHTML = `<i class="fas fa-exchange-alt"></i> Compare Selected (${selectedProducts.length})`;
+        
+        // Build the comparison URL with selected product IDs
+        let compareUrl = "{{ url_for('compare') }}?";
+        selectedProducts.forEach(id => {
+            compareUrl += `product_id=${id}&`;
+        });
+        compareUrl += `category={{ selected_category }}`;
+        
+        compareBtn.href = compareUrl;
+    } else {
+        compareBtn.classList.add('disabled');
+        compareBtn.innerHTML = '<i class="fas fa-exchange-alt"></i> Compare Selected (0)';
+        compareBtn.href = '#';
+    }
+}
+</script>
+{% endblock %}

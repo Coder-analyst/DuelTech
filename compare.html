@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Products - DuelTech{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="glass-card p-4">
+        <h1 class="text-center mb-4">Product Comparison</h1>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="category-filter">
+                <label for="categorySelect" class="form-label">Filter by Category:</label>
+                <select id="categorySelect" class="form-select">
+                    {% for cat_id, cat in categories.items() %}
+                    <option value="{{ cat_id }}" {% if cat_id == selected_category %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <a href="{{ url_for('products_page') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add More Products
+            </a>
+        </div>
+        
+        {% if products|length > 0 %}
+        <div class="table-responsive comparison-table">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th class="feature-column">Features</th>
+                        {% for product in products %}
+                        <th class="text-center product-column">
+                            <div class="product-header">
+                                <div class="product-actions text-end mb-2">
+                                    <button class="btn btn-sm btn-outline-danger remove-product" data-product-id="{{ product.id }}">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <h4>{{ product.name }}</h4>
+                                <div class="product-icon-wrapper mb-3">
+                                    <i class="fas fa-microchip fa-4x product-icon"></i>
+                                </div>
+                                <div class="price mb-2">{{ product.price }}</div>
+                                <div class="rating mb-3">
+                                    {% for i in range(product.rating|int) %}
+                                    <i class="fas fa-star text-warning"></i>
+                                    {% endfor %}
+                                    {% if (product.rating % 1) >= 0.5 %}
+                                    <i class="fas fa-star-half-alt text-warning"></i>
+                                    {% endif %}
+                                </div>
+                                <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn btn-sm btn-primary">View Details</a>
+                            </div>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- General section -->
+                    <tr class="section-header">
+                        <td colspan="{{ products|length + 1 }}" class="text-start">
+                            <h5><i class="fas fa-info-circle me-2"></i>General Information</h5>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Brand</td>
+                        {% for product in products %}
+                        <td class="text-center">{{ product.brand }}</td>
+                        {% endfor %}
+                    </tr>
+                    
+                    <!-- Specs section -->
+                    <tr class="section-header">
+                        <td colspan="{{ products|length + 1 }}" class="text-start">
+                            <h5><i class="fas fa-microchip me-2"></i>Technical Specifications</h5>
+                        </td>
+                    </tr>
+                    {% for spec in all_specs_keys %}
+                    <tr>
+                        <td class="fw-bold text-capitalize">{{ spec.replace('_', ' ') }}</td>
+                        {% for product in products %}
+                        <td class="text-center {% if loop.index is even %}highlight-cell{% endif %}">
+                            {{ product.specs.get(spec, 'N/A') }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="{{ url_for('products_page') }}" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Products
+            </a>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-exchange-alt fa-5x text-muted"></i>
+            </div>
+            <h3>No products selected for comparison</h3>
+            <p class="lead mb-4">Select products from our catalog to compare their features side by side.</p>
+            <a href="{{ url_for('products_page') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-search me-2"></i>Browse Products
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.product-header {
+    text-align: center;
+    padding: 1rem;
+}
+.table td, .table th {
+    padding: 1rem;
+    vertical-align: middle;
+}
+.price {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #2ecc71;
+}
+.rating {
+    font-size: 1.1rem;
+}
+.feature-column {
+    min-width: 180px;
+    background-color: rgba(15, 15, 35, 0.8);
+}
+.product-column {
+    min-width: 220px;
+}
+.section-header {
+    background-color: rgba(0, 247, 255, 0.1);
+}
+.section-header h5 {
+    margin: 0;
+    padding: 10px 0;
+    color: var(--primary-color);
+}
+.highlight-cell {
+    background-color: rgba(0, 247, 255, 0.05);
+}
+.comparison-table {
+    box-shadow: 0 0 20px rgba(0, 247, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+.product-icon {
+    color: var(--primary-color);
+    animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+</style>
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle category filter change
+        const categorySelect = document.getElementById('categorySelect');
+        if (categorySelect) {
+            categorySelect.addEventListener('change', function() {
+                window.location.href = "{{ url_for('compare') }}?category=" + this.value;
+            });
+        }
+        
+        // Handle remove product buttons
+        const removeButtons = document.querySelectorAll('.remove-product');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-product-id');
+                removeProductFromComparison(productId);
+            });
+        });
+        
+        // Remove product from comparison
+        function removeProductFromComparison(productId) {
+            // Get current URL and parameters
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+            
+            // Get all product IDs
+            const productIds = params.getAll('product_id');
+            
+            // Remove the selected product ID
+            const updatedIds = productIds.filter(id => id !== productId);
+            
+            // Update URL parameters
+            params.delete('product_id');
+            updatedIds.forEach(id => params.append('product_id', id));
+            
+            // Redirect to updated URL
+            window.location.href = url.pathname + '?' + params.toString();
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}
