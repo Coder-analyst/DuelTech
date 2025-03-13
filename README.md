@@ -11,9 +11,7 @@ DuelTech is a dynamic comparison website designed to provide side-by-side evalua
 ### Tech Stack:  
 - **Backend**: Flask (Python)  
 - **Frontend**: HTML, CSS, JavaScript  
-- **Database**: (Specify if using SQL/NoSQL)  
-- **Deployment**: (Specify if hosted on a platform like Heroku, AWS, etc.)  
-
+  
 ### Future Enhancements:  
 - User authentication for personalized comparisons  
 - AI-based recommendation engine for smarter suggestions  
